@@ -6,13 +6,14 @@ import {
   type ColumnDef,
   type SortingState
 } from '@tanstack/react-table'
-import { ChevronsLeft, ChevronsRight, ChevronLeft, ChevronRight, ChevronsUpDown, File } from 'lucide-react'
+import { ChevronsLeft, ChevronsRight, ChevronLeft, ChevronRight, ChevronsUpDown, Download, File } from 'lucide-react'
 
 import type { CatalogPageData, CatalogSortField, CatalogSortOrder, RecordItem } from '@/adapter/types'
 
 import { Button } from '@/library/ui/button'
 import { Skeleton } from '@/library/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/library/ui/select'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/library/ui/tooltip'
 import { cn } from '@/library/utils'
 import { StatusBadge } from './status-badge'
 import { FoundEntityChips } from './found-entity-chips'
@@ -98,6 +99,14 @@ const formatCreatedAt = (value: string) =>
     minute: '2-digit'
   }).format(new Date(value))
 
+const triggerDownload = (url: string) => {
+  const link = document.createElement('a')
+  link.href = url
+  link.target = '_blank'
+  link.rel = 'noopener noreferrer'
+  link.click()
+}
+
 export function CatalogTable({
   page,
   isLoading,
@@ -121,12 +130,13 @@ export function CatalogTable({
   })
 
   return (
-    <div
-      className={cn(
-        'w-full min-w-0 overflow-hidden bg-background',
-        !embedded && 'rounded-md border border-border shadow-none'
-      )}
-    >
+    <TooltipProvider>
+      <div
+        className={cn(
+          'w-full min-w-0 overflow-hidden bg-background',
+          !embedded && 'rounded-md border border-border shadow-none'
+        )}
+      >
       <div className='w-full overflow-x-auto'>
         <table className='w-full min-w-[1331px] text-sm'>
           <thead className='bg-background text-left text-muted-foreground'>
@@ -221,10 +231,48 @@ export function CatalogTable({
                       )}
                     >
                       {cell.column.id === 'originalFileName' || cell.column.id === 'processedFileName' ? (
-                        <span className='inline-flex min-w-0 items-center gap-2 text-primary'>
-                          <File className='size-4' />
-                          <span className='truncate'>{String(cell.getValue() ?? '')}</span>
-                        </span>
+                        (() => {
+                          const isProcessed = cell.column.id === 'processedFileName'
+                          const fileName = String(cell.getValue() ?? '')
+                          const downloadUrl = isProcessed ? row.original.processedFileUrl : row.original.originalFileUrl
+                          const isDownloadable = Boolean(downloadUrl)
+                          const tooltipLabel = isDownloadable
+                            ? `Скачать ${isProcessed ? 'обработанный' : 'исходный'} файл`
+                            : isProcessed
+                              ? 'Обработанный файл пока недоступен'
+                              : 'Файл недоступен для скачивания'
+
+                          return (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type='button'
+                                  disabled={!isDownloadable}
+                                  className={cn(
+                                    'inline-flex min-h-10 min-w-0 max-w-full items-center gap-2 rounded-md px-2.5 py-2 text-left transition-colors',
+                                    isDownloadable
+                                      ? 'text-primary hover:bg-primary/10 focus-visible:ring-ring/50 cursor-pointer focus-visible:ring-[3px] focus-visible:outline-none'
+                                      : 'cursor-not-allowed text-muted-foreground/70'
+                                  )}
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+
+                                    if (!downloadUrl) {
+                                      return
+                                    }
+
+                                    triggerDownload(downloadUrl)
+                                  }}
+                                >
+                                  <File className='size-4 shrink-0' />
+                                  <span className='truncate'>{fileName}</span>
+                                  {isDownloadable ? <Download className='size-3.5 shrink-0 opacity-70' /> : null}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>{tooltipLabel}</TooltipContent>
+                            </Tooltip>
+                          )
+                        })()
                       ) : cell.column.id === 'title' ? (
                         <span
                           className='block max-w-[256px] overflow-hidden text-ellipsis font-medium leading-5 text-foreground'
@@ -315,6 +363,7 @@ export function CatalogTable({
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </TooltipProvider>
   )
 }
