@@ -1,0 +1,94 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tula-ml-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - tula_ml_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  whisper:
+    build:
+      context: .
+      dockerfile: Dockerfile.whisper
+    container_name: tula-ml-whisper
+    restart: unless-stopped
+    environment:
+      WHISPER_MODEL_NAME: medium
+      WHISPER_HOST: 0.0.0.0
+      WHISPER_PORT: 8091
+      WHISPER_MODEL_DIR: /app/.runtime/whisper/models
+      WHISPER_ENABLE_CONVERT: 0
+      WHISPER_NO_GPU: 1
+      WHISPER_NO_FLASH_ATTN: 1
+    entrypoint: ["/bin/bash", "/app/scripts/start_whisper_server.sh"]
+    ports:
+      - "8091:8091"
+    volumes:
+      - tula_ml_runtime:/app/.runtime
+      - ./scripts:/app/scripts:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8091/ >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: tula-ml-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      whisper:
+        condition: service_healthy
+    environment:
+      TULA_DATABASE_BACKEND: ${TULA_DATABASE_BACKEND:-postgres}
+      TULA_POSTGRES_DSN: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      TULA_OBJECT_STORE_BACKEND: ${TULA_OBJECT_STORE_BACKEND:-local}
+      TULA_RUNTIME_DIR: /app/.runtime
+      TULA_HOST: 0.0.0.0
+      TULA_PORT: 8080
+      TULA_SIGNING_SECRET: ${TULA_SIGNING_SECRET:-}
+      TULA_AUTH_SECRET: ${TULA_AUTH_SECRET:-}
+      TULA_WEBHOOK_SIGNING_SECRET: ${TULA_WEBHOOK_SIGNING_SECRET:-}
+      TULA_API_X_TOKEN: ${TULA_API_X_TOKEN}
+      WHISPER_BASE_URL: ${WHISPER_BASE_URL:-http://whisper:8091}
+      WHISPER_MODEL_NAME: ${WHISPER_MODEL_NAME:-medium}
+      LMSTUDIO_BASE_URL: ${LMSTUDIO_BASE_URL:-}
+      LMSTUDIO_CHAT_PATH: ${LMSTUDIO_CHAT_PATH:-/v1/chat/completions}
+      LMSTUDIO_MODELS_PATH: ${LMSTUDIO_MODELS_PATH:-/v1/models}
+      LMSTUDIO_LLM_MODEL: ${LMSTUDIO_LLM_MODEL:-gpt-oss:120b}
+      LMSTUDIO_API_KEY: ${LMSTUDIO_API_KEY:-}
+      LMSTUDIO_COOKIE: ${LMSTUDIO_COOKIE:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8080:8080"
+    volumes:
+      - tula_ml_runtime:/app/.runtime
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  tula_ml_postgres_data:
+  tula_ml_runtime:
