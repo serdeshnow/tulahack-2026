@@ -1,0 +1,11 @@
+# Exclude node_modules from host to avoid re-transferring them
+node_modules
+# Exclude dist
+dist
+# Exclude system file
+.git
+.gitignore
+# Exclude logs
+*.log
+# Exclude Docker configs
+docker

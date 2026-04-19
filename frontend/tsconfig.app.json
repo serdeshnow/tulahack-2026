@@ -1,0 +1,55 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Path aliases */
+    "paths": {
+      "@/adapter": ["./src/adapter"],
+      "@/adapter/*": ["./src/adapter/*"],
+      "@/application": ["./src/application"],
+      "@/application/*": ["./src/application/*"],
+      "@/library": ["./src/library"],
+      "@/library/*": ["./src/library/*"],
+    },
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    // "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+
+    /* Misc */
+    "experimentalDecorators": true, // @decorator
+    "emitDecoratorMetadata": true, // MobX/MobX-Keystone sometimes require this for types to work correctly.
+  },
+  "include": [
+    "src",
+    "types"
+  ],
+  "exclude": [
+    "src/library/models/base/**/*",
+    "src/library/models/field.ts",
+    "src/library/models/fields.ts",
+    "src/library/models/file.ts",
+    "src/library/models/hotkeys.ts",
+    "src/library/models/index.ts",
+    "src/library/models/pooling.ts",
+    "src/library/models/theme.ts",
+    "src/library/models/user.ts"
+  ]
+}

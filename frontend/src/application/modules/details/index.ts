@@ -1,0 +1,6 @@
+export { DetailsPage } from './details-page'
+export { DetailsHeader } from './details-header'
+export { WaveformPlayer } from './waveform-player'
+export { TranscriptAccordion } from './transcript-accordion'
+export { SummaryAccordion } from './summary-accordion'
+export { LogsAccordion } from './logs-accordion'

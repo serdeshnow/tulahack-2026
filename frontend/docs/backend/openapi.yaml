@@ -1,0 +1,912 @@
+openapi: 3.0.3
+info:
+  title: Voice Data Redaction API
+  version: 0.1.0
+  description: |
+    Draft OpenAPI spec generated from the current frontend contract.
+
+    Intended use:
+    - FastAPI backend scaffold
+    - frontend/backend contract alignment
+    - quick mock server generation if needed
+
+servers:
+  - url: /api/v1
+    description: Relative API base used by frontend
+
+tags:
+  - name: catalog
+  - name: details
+  - name: upload
+  - name: artifacts
+  - name: stats
+  - name: docs
+
+components:
+  parameters:
+    XTokenHeader:
+      in: header
+      name: X-Token
+      required: true
+      description: Hardcoded MVP token shared by frontend and backend.
+      schema:
+        type: string
+        example: mvp-static-token
+
+  schemas:
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+          nullable: true
+        details:
+          nullable: true
+      required:
+        - message
+
+    OkResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+      required:
+        - ok
+
+    RecordStatus:
+      type: string
+      enum:
+        - uploaded
+        - queued
+        - processing
+        - completed
+        - failed
+
+    EntityType:
+      type: string
+      enum:
+        - PERSON_NAME
+        - DATE_OF_BIRTH
+        - RU_PASSPORT
+        - RU_INN
+        - RU_SNILS
+        - PHONE
+        - EMAIL
+        - ADDRESS
+        - CARD_INFORMATION
+
+    AudioArtifactVariant:
+      type: string
+      enum:
+        - source
+        - redacted
+
+    LogLevel:
+      type: string
+      enum:
+        - debug
+        - info
+        - warn
+        - error
+
+    SummaryKind:
+      type: string
+      enum:
+        - short
+        - full
+        - compliance
+
+    ContentView:
+      type: string
+      enum:
+        - redacted
+        - original
+
+    Severity:
+      type: string
+      nullable: true
+      enum:
+        - low
+        - medium
+        - high
+
+    FoundEntityBadge:
+      type: object
+      additionalProperties: false
+      properties:
+        type:
+          $ref: '#/components/schemas/EntityType'
+        count:
+          type: integer
+          nullable: true
+          minimum: 0
+      required:
+        - type
+
+    AudioRecord:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        originalFileName:
+          type: string
+        processedFileName:
+          type: string
+          nullable: true
+        originalFileUrl:
+          type: string
+          format: uri
+          nullable: true
+        processedFileUrl:
+          type: string
+          format: uri
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        durationSec:
+          type: number
+        status:
+          $ref: '#/components/schemas/RecordStatus'
+        foundEntities:
+          type: array
+          items:
+            $ref: '#/components/schemas/FoundEntityBadge'
+        errorMessage:
+          type: string
+          nullable: true
+        processingStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        processingCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        canDownloadProcessedAudio:
+          type: boolean
+          default: false
+      required:
+        - id
+        - title
+        - originalFileName
+        - processedFileName
+        - originalFileUrl
+        - processedFileUrl
+        - createdAt
+        - durationSec
+        - status
+        - foundEntities
+        - canDownloadProcessedAudio
+
+    AudioCatalogResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AudioRecord'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 1
+      required:
+        - items
+        - page
+        - pageSize
+        - totalItems
+        - totalPages
+
+    UploadAudioResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AudioRecord'
+      required:
+        - items
+
+    TranscriptMention:
+      type: object
+      additionalProperties: false
+      description: Character offsets for a redacted transcript token inside `redactedText`.
+      properties:
+        entityId:
+          type: string
+          description: References `PiiEntity.id`.
+        startOffset:
+          type: integer
+          minimum: 0
+          description: Inclusive character offset in `redactedText`.
+        endOffset:
+          type: integer
+          minimum: 0
+          description: Exclusive character offset in `redactedText`.
+      required:
+        - entityId
+        - startOffset
+        - endOffset
+
+    TranscriptSegment:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        startMs:
+          type: integer
+          minimum: 0
+        endMs:
+          type: integer
+          minimum: 0
+        speakerLabel:
+          type: string
+          nullable: true
+        originalText:
+          type: string
+        redactedText:
+          type: string
+        hasRedactions:
+          type: boolean
+        entityRefs:
+          type: array
+          items:
+            type: string
+        mentions:
+          type: array
+          description: Redacted-text highlight ranges for transcript rendering.
+          items:
+            $ref: '#/components/schemas/TranscriptMention'
+      required:
+        - id
+        - startMs
+        - endMs
+        - speakerLabel
+        - originalText
+        - redactedText
+        - hasRedactions
+        - entityRefs
+        - mentions
+
+    PiiEntity:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        type:
+          $ref: '#/components/schemas/EntityType'
+        startMs:
+          type: integer
+          minimum: 0
+        endMs:
+          type: integer
+          minimum: 0
+        segmentIds:
+          type: array
+          items:
+            type: string
+        originalValue:
+          type: string
+          nullable: true
+        redactedValue:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        isApplied:
+          type: boolean
+      required:
+        - id
+        - type
+        - startMs
+        - endMs
+        - segmentIds
+        - redactedValue
+        - confidence
+        - isApplied
+
+    SummaryBlock:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        kind:
+          $ref: '#/components/schemas/SummaryKind'
+        text:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - kind
+        - text
+        - generatedAt
+
+    ProcessingLogEntry:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        at:
+          type: string
+          format: date-time
+        level:
+          $ref: '#/components/schemas/LogLevel'
+        stage:
+          type: string
+        message:
+          type: string
+        meta:
+          type: object
+          nullable: true
+          additionalProperties: true
+      required:
+        - id
+        - at
+        - level
+        - stage
+        - message
+
+    WaveformRegion:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        startMs:
+          type: integer
+          minimum: 0
+        endMs:
+          type: integer
+          minimum: 0
+        entityTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityType'
+        entityIds:
+          type: array
+          nullable: true
+          items:
+            type: string
+        severity:
+          $ref: '#/components/schemas/Severity'
+        redacted:
+          type: boolean
+      required:
+        - id
+        - startMs
+        - endMs
+        - entityTypes
+        - redacted
+
+    AudioRecordDetailsResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        record:
+          $ref: '#/components/schemas/AudioRecord'
+        transcript:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranscriptSegment'
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/PiiEntity'
+        summaries:
+          type: array
+          items:
+            $ref: '#/components/schemas/SummaryBlock'
+        logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessingLogEntry'
+        waveform:
+          type: array
+          items:
+            $ref: '#/components/schemas/WaveformRegion'
+        availableViews:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentView'
+      required:
+        - record
+        - transcript
+        - entities
+        - summaries
+        - logs
+        - waveform
+        - availableViews
+
+    AudioRecordStatusResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        status:
+          $ref: '#/components/schemas/RecordStatus'
+        errorMessage:
+          type: string
+          nullable: true
+        processingStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        processingCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - status
+
+    StatsStatusGroup:
+      type: string
+      enum:
+        - completed
+        - processing
+        - failed
+        - queued
+
+    StatsPeriodPoint:
+      type: object
+      additionalProperties: false
+      properties:
+        periodStart:
+          type: string
+          format: date
+        label:
+          type: string
+        value:
+          type: integer
+          minimum: 0
+      required:
+        - periodStart
+        - label
+        - value
+
+    StatsEntityDetectionItem:
+      type: object
+      additionalProperties: false
+      properties:
+        type:
+          $ref: '#/components/schemas/EntityType'
+        count:
+          type: integer
+          minimum: 0
+      required:
+        - type
+        - count
+
+    StatsStatusDistributionItem:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          $ref: '#/components/schemas/StatsStatusGroup'
+        count:
+          type: integer
+          minimum: 0
+      required:
+        - status
+        - count
+
+    StatsOverviewResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        processedFiles:
+          type: integer
+          minimum: 0
+        processedAudioHours:
+          type: number
+          minimum: 0
+        averageProcessingTimeSec:
+          type: number
+          minimum: 0
+        averageProcessingTimeChangePct:
+          type: number
+        timingCompliancePct:
+          type: number
+          minimum: 0
+          maximum: 100
+        detectedEntities:
+          type: integer
+          minimum: 0
+        detectedEntitiesChangePct:
+          type: number
+        topEntityTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityType'
+        recognitionAccuracyPct:
+          type: number
+          minimum: 0
+          maximum: 100
+        recognitionAccuracyChangePct:
+          type: number
+        monthlyProcessedFilesChangePct:
+          type: number
+        monthlyProcessedFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatsPeriodPoint'
+        entityDetections:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatsEntityDetectionItem'
+        statusDistribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatsStatusDistributionItem'
+      required:
+        - processedFiles
+        - processedAudioHours
+        - averageProcessingTimeSec
+        - averageProcessingTimeChangePct
+        - timingCompliancePct
+        - detectedEntities
+        - detectedEntitiesChangePct
+        - topEntityTypes
+        - recognitionAccuracyPct
+        - recognitionAccuracyChangePct
+        - monthlyProcessedFilesChangePct
+        - monthlyProcessedFiles
+        - entityDetections
+        - statusDistribution
+
+    ApiHeader:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+        required:
+          type: boolean
+      required:
+        - name
+        - value
+        - required
+
+    ApiEndpointDoc:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        method:
+          type: string
+          enum:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+        path:
+          type: string
+        description:
+          type: string
+        headers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiHeader'
+        requestExample:
+          type: string
+        responseExample:
+          type: string
+        curlExample:
+          type: string
+      required:
+        - id
+        - title
+        - method
+        - path
+        - description
+        - headers
+        - requestExample
+        - responseExample
+        - curlExample
+
+    ApiDocsConfigResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        baseUrl:
+          type: string
+        tokenLabel:
+          type: string
+        tokenValue:
+          type: string
+          nullable: true
+        endpoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiEndpointDoc'
+      required:
+        - baseUrl
+        - tokenLabel
+        - endpoints
+
+    AudioDownloadResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        job_id:
+          type: string
+        variant:
+          $ref: '#/components/schemas/AudioArtifactVariant'
+        download_url:
+          type: string
+          format: uri
+        expires_at:
+          type: string
+          format: date-time
+      required:
+        - job_id
+        - variant
+        - download_url
+        - expires_at
+
+paths:
+  /audio:
+    get:
+      tags: [catalog]
+      summary: List audio records
+      parameters:
+        - $ref: '#/components/parameters/XTokenHeader'
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - uploaded
+              - queued
+              - processing
+              - completed
+              - failed
+              - all
+        - in: query
+          name: entityType
+          schema:
+            type: string
+            enum:
+              - PERSON_NAME
+              - DATE_OF_BIRTH
+              - RU_PASSPORT
+              - RU_INN
+              - RU_SNILS
+              - PHONE
+              - EMAIL
+              - ADDRESS
+              - CARD_INFORMATION
+              - all
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum:
+              - title
+              - createdAt
+              - durationSec
+              - status
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - in: query
+          name: dateFrom
+          schema:
+            type: string
+        - in: query
+          name: dateTo
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated catalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudioCatalogResponse'
+        '401':
+          description: Missing or invalid X-Token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [upload]
+      summary: Upload audio files and start processing
+      parameters:
+        - $ref: '#/components/parameters/XTokenHeader'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - files
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Created records already placed into processing pipeline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadAudioResponse'
+        '400':
+          description: Invalid upload payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid X-Token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /audio/{audioId}:
+    get:
+      tags: [details]
+      summary: Get record details
+      parameters:
+        - $ref: '#/components/parameters/XTokenHeader'
+        - in: path
+          name: audioId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Full details payload for details page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudioRecordDetailsResponse'
+        '404':
+          description: Record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /audio/{audioId}/status:
+    get:
+      tags: [details]
+      summary: Get current processing status
+      parameters:
+        - $ref: '#/components/parameters/XTokenHeader'
+        - in: path
+          name: audioId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudioRecordStatusResponse'
+        '404':
+          description: Record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /jobs/{jobId}/audio:
+    get:
+      tags: [artifacts]
+      summary: Get signed URL for audio artifact
+      parameters:
+        - $ref: '#/components/parameters/XTokenHeader'
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: variant
+          schema:
+            $ref: '#/components/schemas/AudioArtifactVariant'
+      responses:
+        '200':
+          description: Signed download URL for source or redacted audio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudioDownloadResponse'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stats/overview:
+    get:
+      tags: [stats]
+      summary: Get overview statistics
+      parameters:
+        - $ref: '#/components/parameters/XTokenHeader'
+      responses:
+        '200':
+          description: Overview stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsOverviewResponse'
+
+  /docs/config:
+    get:
+      tags: [docs]
+      summary: Get API docs config for frontend page
+      parameters:
+        - $ref: '#/components/parameters/XTokenHeader'
+      responses:
+        '200':
+          description: API docs config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiDocsConfigResponse'

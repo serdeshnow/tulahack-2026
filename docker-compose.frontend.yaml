@@ -1,0 +1,11 @@
+services:
+  frontend:
+    container_name: frontend
+    image: frontend
+    env_file:
+      - ./frontend/.env
+    build:
+      context: ./frontend
+    ports:
+      - "80:80" #11009:80
+    restart: unless-stopped
