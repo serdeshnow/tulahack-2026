@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { apiDocsService } from '@/adapter/tulahack'
-import { getAccessToken } from '@/application/core'
+import { env } from '@/application/core'
 import { queryKeys } from '@/application/query-keys'
 import { Card } from '@/library/ui/card'
 import { InfoHint } from '@/library/ui/info-hint'
@@ -16,6 +16,9 @@ export function ApiDocsPage() {
   })
 
   const docs = docsQuery.data
+  const baseUrl = docs?.baseUrl || env.VITE_API_URL
+  const tokenLabel = docs?.tokenLabel || 'X-Token'
+  const tokenValue = docs?.tokenValue || env.VITE_X_TOKEN
 
   if (docsQuery.isLoading) {
     return <ApiDocsPageSkeleton />
@@ -39,16 +42,16 @@ export function ApiDocsPage() {
                 <InfoHint label='URL — веб-адрес сервиса. Этот адрес используется как основа для всех API-запросов.' />
               </span>
             }
-            value={docs?.baseUrl ?? '...'}
+            value={baseUrl}
           />
           <CopyField
             label={
               <span className='inline-flex items-center gap-2'>
-                Токен доступа
-                <InfoHint label='Токен доступа нужен для авторизации запросов к API.' />
+                {tokenLabel}
+                <InfoHint label='X-Token — служебный заголовок, который backend ожидает для доступа к API.' />
               </span>
             }
-            value={docs?.tokenValue ?? getAccessToken() ?? ''}
+            value={tokenValue}
           />
         </Card.Content>
       </Card>

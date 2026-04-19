@@ -30,11 +30,13 @@ const ENTITY_SUMMARY_LABELS: Record<EntityType, string> = {
   PERSON_NAME: 'ФИО',
   DATE_OF_BIRTH: 'Даты рождения',
   RU_PASSPORT: 'Паспортные данные',
+  RU_PASSPORT_ISSUER: 'Паспортные данные',
   RU_INN: 'ИНН',
   RU_SNILS: 'СНИЛС',
   PHONE: 'Телефоны',
   EMAIL: 'Email',
   ADDRESS: 'Адреса',
+  CARD_NUMBER: 'Банковские карты',
   CARD_INFORMATION: 'Банковские карты'
 }
 

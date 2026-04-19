@@ -44,23 +44,27 @@ type StatusSlice = {
 const ENTITY_ORDER: EntityType[] = [
   'PHONE',
   'DATE_OF_BIRTH',
+  'RU_PASSPORT',
+  'RU_PASSPORT_ISSUER',
   'RU_SNILS',
   'EMAIL',
   'ADDRESS',
-  'RU_PASSPORT',
   'RU_INN',
   'PERSON_NAME',
+  'CARD_NUMBER',
   'CARD_INFORMATION'
 ]
 const ENTITY_SHORT_LABELS: Record<EntityType, string> = {
   PHONE: 'Телефоны',
   DATE_OF_BIRTH: 'Даты рождения',
+  RU_PASSPORT: 'Паспорта',
+  RU_PASSPORT_ISSUER: 'Кем выдан',
   RU_SNILS: 'СНИЛС',
   EMAIL: 'Email',
   ADDRESS: 'Адреса',
-  RU_PASSPORT: 'Паспорта',
   RU_INN: 'ИНН',
   PERSON_NAME: 'ФИО',
+  CARD_NUMBER: 'Номера карт',
   CARD_INFORMATION: 'Карты'
 }
 const STATUS_CONFIG: Record<StatsStatusGroup, { label: string; color: string }> = {
@@ -68,6 +72,14 @@ const STATUS_CONFIG: Record<StatsStatusGroup, { label: string; color: string }> 
   processing: { label: 'В обработке', color: '#dde4ee' },
   failed: { label: 'Ошибка', color: '#f14444' },
   queued: { label: 'В очереди', color: '#f6f1c7' }
+}
+
+function getEntityLabel(type: EntityType) {
+  return ENTITY_TYPE_LABELS[type] ?? ENTITY_SHORT_LABELS[type] ?? type
+}
+
+function getEntityShortLabel(type: EntityType) {
+  return ENTITY_SHORT_LABELS[type] ?? ENTITY_TYPE_LABELS[type] ?? type
 }
 
 export function StatsPage() {
@@ -201,7 +213,7 @@ function buildStatsViewModel(stats: StatsOverview) {
     ...stats,
     entityDetections,
     statusDistribution,
-    detectedTypesSummary: stats.topEntityTypes.map((type) => ENTITY_TYPE_LABELS[type].toLowerCase()).join(', '),
+    detectedTypesSummary: stats.topEntityTypes.map((type) => getEntityLabel(type).toLowerCase()).join(', '),
     topEntitiesSummary: buildTopEntitiesSummary(stats.topEntityTypes),
     periodLabel: buildPeriodLabel(stats.monthlyProcessedFiles),
     volumeChartPoints: aggregateVolumePointsByHour(stats.monthlyProcessedFiles)
@@ -209,7 +221,7 @@ function buildStatsViewModel(stats: StatsOverview) {
 }
 
 function buildTopEntitiesSummary(entityTypes: EntityType[]) {
-  const labels = entityTypes.slice(0, 2).map((type) => ENTITY_SHORT_LABELS[type].toLowerCase())
+  const labels = entityTypes.slice(0, 2).map((type) => getEntityShortLabel(type).toLowerCase())
 
   if (labels.length === 0) {
     return 'Пока недостаточно данных для распределения'
@@ -230,6 +242,20 @@ function buildPeriodLabel(points: StatsOverview['monthlyProcessedFiles']) {
   return `${first} - ${last} ${year}`
 }
 
+function formatVolumePointLabel(date: Date) {
+  const dateLabel = new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit',
+    month: '2-digit'
+  }).format(date)
+
+  const timeLabel = new Intl.DateTimeFormat('ru-RU', {
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
+
+  return `${dateLabel} ${timeLabel}`
+}
+
 function aggregateVolumePointsByHour(points: StatsOverview['monthlyProcessedFiles']) {
   const buckets = new Map<string, { periodStart: string; label: string; value: number }>()
 
@@ -238,15 +264,6 @@ function aggregateVolumePointsByHour(points: StatsOverview['monthlyProcessedFile
     const bucketDate = new Date(date)
     bucketDate.setMinutes(0, 0, 0)
     const key = bucketDate.toISOString()
-    const hourLabel = new Intl.DateTimeFormat('ru-RU', {
-      hour: '2-digit'
-    }).format(bucketDate)
-
-    const dateLabel = new Intl.DateTimeFormat('ru-RU', {
-      day: '2-digit',
-      month: '2-digit'
-    }).format(bucketDate)
-
     const existing = buckets.get(key)
 
     if (existing) {
@@ -256,14 +273,26 @@ function aggregateVolumePointsByHour(points: StatsOverview['monthlyProcessedFile
 
     buckets.set(key, {
       periodStart: key,
-      label: `${dateLabel} ${hourLabel}:00`,
+      label: formatVolumePointLabel(bucketDate),
       value: point.value
     })
   })
 
-  return Array.from(buckets.values()).sort(
+  const aggregatedPoints = Array.from(buckets.values()).sort(
     (left, right) => new Date(left.periodStart).getTime() - new Date(right.periodStart).getTime()
   )
+
+  if (aggregatedPoints.length >= 2) {
+    return aggregatedPoints
+  }
+
+  return points
+    .map((point) => ({
+      periodStart: point.periodStart,
+      label: formatVolumePointLabel(new Date(point.periodStart)),
+      value: point.value
+    }))
+    .sort((left, right) => new Date(left.periodStart).getTime() - new Date(right.periodStart).getTime())
 }
 
 function formatDuration(durationSec: number) {
@@ -383,7 +412,7 @@ function AreaVolumeChart({
               boxShadow: 'none'
             }}
             formatter={(value) => formatTooltipValue(value, 'Файлов')}
-            labelFormatter={(label) => `Час: ${label}`}
+            labelFormatter={(label) => `Период: ${label}`}
           />
           <Area
             type='monotone'
