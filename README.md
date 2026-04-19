@@ -1,13 +1,13 @@
 # Tulahack 2026
 
 <div align="center">
-  <img src="./frontend/public/tula.svg" alt="Tulahack logo" width="88" />
+  <img src="./tulahack_2026_banner.jpg" alt="tulahack logo" width="88" />
   <h3>Сервис анонимизации голосовых данных</h3>
   <h4>МИСИС х МИРЭА Степичево</h4>
   <p align="center">
   Приватность и спокойствие!
   <br>
-  <a href="https://www.figma.com/design/mvxSqON2dbA4eldvHYSYrP/Tula?node-id=0-1&t=7iQSe86XgrCLDJSr-1" target="_blank"><strong>Презентация »</strong></a>
+  <a href="https://google.com" target="_blank"><strong>Презентация »</strong></a>
   <br>
   <strong><a href="http://217.149.29.13:80" target="_blank"><strong>Попробовать »</strong></a></strong>
   <br>
