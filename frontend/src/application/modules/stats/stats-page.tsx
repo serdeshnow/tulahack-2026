@@ -160,7 +160,7 @@ export function StatsPage() {
               <h2 className='text-base font-semibold text-card-foreground'>Объём обработок</h2>
               {/* <p className='text-sm text-muted-foreground'>Последние 6 месяцев</p> */}
             </div>
-            <AreaVolumeChart points={stats.monthlyProcessedFiles} />
+            <AreaVolumeChart points={stats.volumeChartPoints} />
             {/* <div className='space-y-2'>
               <div className='inline-flex items-center gap-1 text-sm font-medium text-card-foreground'>
                 <span>Рост загрузок +{stats.monthlyProcessedFilesChangePct}% за месяц</span>
@@ -203,7 +203,8 @@ function buildStatsViewModel(stats: StatsOverview) {
     statusDistribution,
     detectedTypesSummary: stats.topEntityTypes.map((type) => ENTITY_TYPE_LABELS[type].toLowerCase()).join(', '),
     topEntitiesSummary: buildTopEntitiesSummary(stats.topEntityTypes),
-    periodLabel: buildPeriodLabel(stats.monthlyProcessedFiles)
+    periodLabel: buildPeriodLabel(stats.monthlyProcessedFiles),
+    volumeChartPoints: aggregateVolumePointsByHour(stats.monthlyProcessedFiles)
   }
 }
 
@@ -227,6 +228,42 @@ function buildPeriodLabel(points: StatsOverview['monthlyProcessedFiles']) {
   const year = points[0] ? new Date(points[0].periodStart).getFullYear() : new Date().getFullYear()
 
   return `${first} - ${last} ${year}`
+}
+
+function aggregateVolumePointsByHour(points: StatsOverview['monthlyProcessedFiles']) {
+  const buckets = new Map<string, { periodStart: string; label: string; value: number }>()
+
+  points.forEach((point) => {
+    const date = new Date(point.periodStart)
+    const bucketDate = new Date(date)
+    bucketDate.setMinutes(0, 0, 0)
+    const key = bucketDate.toISOString()
+    const hourLabel = new Intl.DateTimeFormat('ru-RU', {
+      hour: '2-digit'
+    }).format(bucketDate)
+
+    const dateLabel = new Intl.DateTimeFormat('ru-RU', {
+      day: '2-digit',
+      month: '2-digit'
+    }).format(bucketDate)
+
+    const existing = buckets.get(key)
+
+    if (existing) {
+      existing.value += point.value
+      return
+    }
+
+    buckets.set(key, {
+      periodStart: key,
+      label: `${dateLabel} ${hourLabel}:00`,
+      value: point.value
+    })
+  })
+
+  return Array.from(buckets.values()).sort(
+    (left, right) => new Date(left.periodStart).getTime() - new Date(right.periodStart).getTime()
+  )
 }
 
 function formatDuration(durationSec: number) {
@@ -320,7 +357,11 @@ function ChartCard({
   )
 }
 
-function AreaVolumeChart({ points }: { points: StatsOverview['monthlyProcessedFiles'] }) {
+function AreaVolumeChart({
+  points
+}: {
+  points: Array<{ periodStart: string; label: string; value: number }>
+}) {
   return (
     <div className='h-[230px] w-full'>
       <ResponsiveContainer width='100%' height='100%'>
@@ -332,7 +373,7 @@ function AreaVolumeChart({ points }: { points: StatsOverview['monthlyProcessedFi
             </linearGradient>
           </defs>
           <CartesianGrid vertical={false} stroke='rgba(208,212,219,0.65)' />
-          <XAxis axisLine={false} tickLine={false} dataKey='label' tick={{ fill: '#6c727e', fontSize: 12 }} />
+          <XAxis axisLine={false} tickLine={false} dataKey='label' tick={{ fill: '#6c727e', fontSize: 12 }} minTickGap={32} />
           <YAxis hide />
           <Tooltip
             cursor={{ stroke: '#8184f8', strokeOpacity: 0.24 }}
@@ -342,7 +383,7 @@ function AreaVolumeChart({ points }: { points: StatsOverview['monthlyProcessedFi
               boxShadow: 'none'
             }}
             formatter={(value) => formatTooltipValue(value, 'Файлов')}
-            labelFormatter={(label) => `Месяц: ${label}`}
+            labelFormatter={(label) => `Час: ${label}`}
           />
           <Area
             type='monotone'
