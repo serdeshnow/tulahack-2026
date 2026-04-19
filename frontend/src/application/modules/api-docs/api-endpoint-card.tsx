@@ -2,6 +2,7 @@ import type { ApiEndpointDoc } from '@/adapter/types'
 
 import { Badge } from '@/library/ui/badge'
 import { Card } from '@/library/ui/card'
+import { InfoHint } from '@/library/ui/info-hint'
 import { CopyField } from './copy-field'
 
 export function ApiEndpointCard({ endpoint }: { endpoint: ApiEndpointDoc }) {
@@ -15,9 +16,9 @@ export function ApiEndpointCard({ endpoint }: { endpoint: ApiEndpointDoc }) {
         <Card.Description>{endpoint.description}</Card.Description>
       </Card.Header>
       <Card.Content className='space-y-4 text-sm'>
-        <CopyField label='Path' value={endpoint.path} />
+        <CopyField label='Путь' value={endpoint.path} />
         <div>
-          <p className='mb-2 font-medium'>Headers</p>
+          <p className='mb-2 font-medium'>Заголовки</p>
           <div className='space-y-2'>
             {endpoint.headers.map((header) => (
               <div key={header.name} className='rounded-md border border-input bg-muted/20 px-3 py-2'>
@@ -26,11 +27,19 @@ export function ApiEndpointCard({ endpoint }: { endpoint: ApiEndpointDoc }) {
             ))}
           </div>
         </div>
-        <CopyField label='Request example' value={endpoint.requestExample} />
-        <CopyField label='Response example' value={endpoint.responseExample} />
-        <CopyField label='Copy curl' value={endpoint.curlExample} copiedText={endpoint.curlExample} />
+        <CopyField label='Пример запроса' value={endpoint.requestExample} />
+        <CopyField label='Пример ответа' value={endpoint.responseExample} />
+        <CopyField
+          label={
+            <span className='inline-flex items-center gap-2'>
+              Команда curl
+              <InfoHint label='curl — консольная команда для отправки HTTP-запросов напрямую из терминала.' />
+            </span>
+          }
+          value={endpoint.curlExample}
+          copiedText={endpoint.curlExample}
+        />
       </Card.Content>
     </Card>
   )
 }
-

@@ -31,7 +31,7 @@ const sidebar = [
     icon: ChartArea
   },
   {
-    title: 'API Docs',
+    title: 'Документация API',
     url: routes.apiDocs.root,
     icon: BookMarked
   }
@@ -112,14 +112,14 @@ function SidebarRepositoryLink() {
       <SidebarMenuItem className={collapsed ? 'w-auto' : 'w-full'}>
         <SidebarMenuButton
           asChild
-          tooltip='GitHub repository'
+          tooltip='Открыть репозиторий проекта на GitHub'
           className={collapsed ? 'size-8 justify-center rounded-md p-0' : 'h-8 w-full rounded-md px-2 text-sm'}
         >
           <a
             href={env.VITE_GITHUB_REPOSITORY_URL}
             target='_blank'
             rel='noreferrer'
-            aria-label='GitHub repository'
+            aria-label='Открыть репозиторий проекта на GitHub'
             className={collapsed ? 'justify-center' : 'justify-start'}
           >
             <img src='/images/github.svg' alt='' className='size-4 shrink-0' />

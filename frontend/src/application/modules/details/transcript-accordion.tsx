@@ -25,6 +25,19 @@ const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\
 const getTimestampLabel = (startMs: number) =>
   `[${String(Math.floor(startMs / 60000)).padStart(2, '0')}:${String(Math.floor((startMs % 60000) / 1000)).padStart(2, '0')}]`
 
+const formatSpeakerLabel = (speakerLabel: string | null) => {
+  if (!speakerLabel) {
+    return 'Спикер'
+  }
+
+  const match = speakerLabel.match(/^spk_(\d+)$/i)
+  if (match) {
+    return `Спикер ${match[1]}`
+  }
+
+  return speakerLabel
+}
+
 const buildChunks = ({
   text,
   segment,
@@ -168,7 +181,7 @@ export function TranscriptAccordion({
               )}
             >
               <span className='text-primary'>
-                {getTimestampLabel(segment.startMs)} {segment.speakerLabel ?? 'Спикер'}:{' '}
+                {getTimestampLabel(segment.startMs)} {formatSpeakerLabel(segment.speakerLabel)}:{' '}
               </span>
               <span className='whitespace-pre-wrap text-foreground'>
                 {chunks.map((chunk, index) =>

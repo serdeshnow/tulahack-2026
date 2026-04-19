@@ -8,6 +8,7 @@ import { env, getAccessToken, routes } from '@/application/core'
 import { AuthService } from '@/adapter/tulahack/auth'
 import { Button } from '@/library/ui/button'
 import { Card } from '@/library/ui/card'
+import { InfoHint } from '@/library/ui/info-hint'
 import { Input } from '@/library/ui/input'
 import { Label } from '@/library/ui/label'
 
@@ -47,7 +48,10 @@ export function AuthPage() {
           <div className='mb-3 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
             <ShieldCheck />
           </div>
-          <Card.Title className='text-2xl'>Voice Data Redaction</Card.Title>
+          <Card.Title className='flex items-center gap-2 text-2xl'>
+            <span>Анонимизация голосовых данных</span>
+            <InfoHint label='Сервис скрывает чувствительные данные в аудио и тексте: например, телефоны, даты рождения и другие персональные сведения.' />
+          </Card.Title>
           <Card.Description>Войдите, чтобы управлять загрузкой, проверкой и экспортом анонимизированных записей.</Card.Description>
         </Card.Header>
         <Card.Content className='space-y-5 py-6'>

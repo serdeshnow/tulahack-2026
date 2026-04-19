@@ -120,7 +120,7 @@ export function UploadModal({ open, onOpenChange, onUploaded }: Props) {
                 href={SAMPLE_AUDIO_URL}
                 download='template.wav'
               >
-                template.mp3
+                template.wav
               </a>
             </Dialog.Description>
           </div>
@@ -204,4 +204,3 @@ export function UploadModal({ open, onOpenChange, onUploaded }: Props) {
     </Dialog.Root>
   )
 }
-

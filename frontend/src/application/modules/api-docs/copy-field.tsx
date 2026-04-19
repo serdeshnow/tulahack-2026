@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Check, Copy } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -7,7 +8,7 @@ import { Input } from '@/library/ui/input'
 import { copy } from '@/library/utils'
 
 type Props = {
-  label: string
+  label: ReactNode
   value: string
   copiedText?: string
 }

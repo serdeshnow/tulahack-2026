@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { env, routes } from '@/application/core'
 import { Button } from '@/library/ui/button'
 import { AuroraBackground } from '@/library/ui/blocks/aurora-background'
+import { InfoHint } from '@/library/ui/info-hint'
 
 export function LandingPage() {
   return (
@@ -47,13 +48,14 @@ export function LandingPage() {
                   href={env.VITE_GITHUB_REPOSITORY_URL}
                   target='_blank'
                   rel='noreferrer'
-                  aria-label='GitHub repository'
+                  aria-label='Открыть репозиторий проекта на GitHub'
                   className={'justify-center'}
                 >
                   <span>GitHub</span>
                   <img src='/images/github.svg' alt='' className='size-6 shrink-0' />
                 </a>
               </Button>
+              <InfoHint label='GitHub — платформа, где хранится исходный код проекта и история изменений.' className='size-5' />
             </div>
             <span className='text-muted-foreground text-center text-xl leading-tight group-data-[collapsible=icon]:hidden'>
               МИСИС х МИРЭА Степичево
@@ -64,4 +66,3 @@ export function LandingPage() {
     </AuroraBackground>
   )
 }
-

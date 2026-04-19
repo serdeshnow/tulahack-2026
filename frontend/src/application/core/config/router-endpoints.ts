@@ -27,7 +27,7 @@ const routes = {
   apiDocs: {
     root: '/records/api-docs',
     path: '/records/api-docs',
-    label: 'API Docs'
+    label: 'Документация API'
   },
   auth: {
     root: '/auth',
