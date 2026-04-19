@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import WaveSurfer from 'wavesurfer.js'
 
 import type { EntityType, WaveformRegion } from '@/adapter/types'
+import { Skeleton } from '@/library/ui/skeleton'
 import { cn, ENTITY_TAG_COLOR_VARS, ENTITY_TAG_HEX_COLORS } from '@/library/utils'
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
 
 export type WaveformPlayerHandle = {
   togglePlayback: () => void
+  playFrom: (seconds: number) => void
 }
 
 const formatTimeLabel = (seconds: number) => {
@@ -145,10 +147,20 @@ export const WaveformPlayer = forwardRef<WaveformPlayerHandle, Props>(function W
   const [currentTime, setCurrentTime] = useState(0)
   const [hoverPreview, setHoverPreview] = useState<{ leftPx: number; seconds: number } | null>(null)
   const [isScrubbing, setIsScrubbing] = useState(false)
+  const [isWaveReady, setIsWaveReady] = useState(false)
 
   useImperativeHandle(ref, () => ({
     togglePlayback: () => {
       waveSurferRef.current?.playPause()
+    },
+    playFrom: (seconds: number) => {
+      if (!waveSurferRef.current || durationRef.current <= 0) {
+        return
+      }
+
+      const clamped = Math.max(0, Math.min(seconds, durationRef.current))
+      waveSurferRef.current.setTime(clamped)
+      void waveSurferRef.current.play()
     }
   }))
 
@@ -156,6 +168,12 @@ export const WaveformPlayer = forwardRef<WaveformPlayerHandle, Props>(function W
     if (!containerRef.current || !audioUrl) {
       return
     }
+
+    setIsWaveReady(false)
+    setDuration(0)
+    setCurrentTime(0)
+    setHoverPreview(null)
+    durationRef.current = 0
 
     const waveSurfer = WaveSurfer.create({
       container: containerRef.current,
@@ -178,6 +196,7 @@ export const WaveformPlayer = forwardRef<WaveformPlayerHandle, Props>(function W
       durationRef.current = nextDuration
       setDuration(nextDuration)
       setCurrentTime(0)
+      setIsWaveReady(true)
       waveSurfer.setOptions({
         renderFunction: (channelData, ctx) => {
           renderWaveformWithPii(channelData, ctx, durationRef.current, visibleRegionsRef.current)
@@ -204,6 +223,7 @@ export const WaveformPlayer = forwardRef<WaveformPlayerHandle, Props>(function W
     return () => {
       waveSurfer.destroy()
       waveSurferRef.current = null
+      setIsWaveReady(false)
       onPlayingChange?.(false)
     }
   }, [audioUrl, onDurationChange, onPlayingChange, onTimeChange])
@@ -331,7 +351,12 @@ export const WaveformPlayer = forwardRef<WaveformPlayerHandle, Props>(function W
             onPointerLeave={handlePointerLeave}
             onLostPointerCapture={handleLostPointerCapture}
           >
-            <div>
+            {!isWaveReady ? (
+              <div className='absolute inset-x-3 top-4 h-24'>
+                <Skeleton className='h-full w-full rounded-xl bg-foreground/10' />
+              </div>
+            ) : null}
+            <div className={cn(!isWaveReady && 'opacity-0')}>
               <div ref={containerRef} />
             </div>
             <div className='pointer-events-none absolute inset-x-3 top-4 h-24'>

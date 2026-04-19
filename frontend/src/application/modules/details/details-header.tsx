@@ -15,6 +15,7 @@ type Props = {
   entitySummary: string
   isPlaying: boolean
   canDownloadCurrentView: boolean
+  redactedViewDisabled: boolean
   onViewModeChange: (view: ContentView) => void
   onTogglePlayback: () => void
   onExportAudio: () => void
@@ -31,6 +32,7 @@ export function DetailsHeader({
   entitySummary,
   isPlaying,
   canDownloadCurrentView,
+  redactedViewDisabled,
   onViewModeChange,
   onTogglePlayback,
   onExportAudio
@@ -45,9 +47,10 @@ export function DetailsHeader({
           <button
             key={tab.id}
             type='button'
+            disabled={tab.id === 'redacted' && redactedViewDisabled}
             onClick={() => onViewModeChange(tab.id)}
             className={cn(
-              'rounded-sm px-3 py-1.5 text-sm font-medium transition-colors',
+              'rounded-sm px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
               viewMode === tab.id ? 'bg-card text-foreground' : 'text-muted-foreground'
             )}
           >

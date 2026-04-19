@@ -25,7 +25,7 @@ type Props = {
   onSortChange: (sortBy: CatalogSortField, sortOrder: CatalogSortOrder) => void
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
-  onRowClick: (audioId: string) => void
+  onRowClick: (record: RecordItem) => void
   embedded?: boolean
 }
 
@@ -207,7 +207,7 @@ export function CatalogTable({
                 <tr
                   key={row.id}
                   className='cursor-pointer border-t border-border bg-transparent transition-colors hover:bg-muted/20'
-                  onClick={() => onRowClick(row.original.id)}
+                  onClick={() => onRowClick(row.original)}
                 >
                   {row.getVisibleCells().map((cell: ReturnType<typeof row.getVisibleCells>[number]) => (
                     <td
@@ -318,4 +318,3 @@ export function CatalogTable({
     </div>
   )
 }
-

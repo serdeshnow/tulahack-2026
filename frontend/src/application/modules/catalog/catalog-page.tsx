@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
+import { toast } from 'sonner'
 
-import type { CatalogFilterValues, CatalogPageData, CatalogSortField, CatalogSortOrder } from '@/adapter/types'
+import type { CatalogFilterValues, CatalogPageData, CatalogSortField, CatalogSortOrder, RecordItem } from '@/adapter/types'
 import { catalogService, getDefaultCatalogFilters } from '@/adapter/tulahack'
 import { routes } from '@/application/core'
 import { queryKeys } from '@/application/query-keys'
@@ -59,6 +60,15 @@ export function CatalogPage() {
     setSearchParams(nextParams)
   }
 
+  const handleRowClick = (record: RecordItem) => {
+    if (record.status === 'queued' || record.status === 'processing') {
+      toast.error('Детали записи будут доступны после завершения обработки')
+      return
+    }
+
+    navigate(`${routes.details.root}/${record.id}`)
+  }
+
   return (
     <main className='flex flex-col gap-4'>
       <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-start'>
@@ -78,7 +88,7 @@ export function CatalogPage() {
           onSortChange={(sortBy, sortOrder) => patchFilters({ sortBy, sortOrder })}
           onPageChange={(pageNumber) => patchFilters({ page: pageNumber })}
           onPageSizeChange={(pageSize) => patchFilters({ pageSize, page: 1 })}
-          onRowClick={(audioId) => navigate(`${routes.details.root}/${audioId}`)}
+          onRowClick={handleRowClick}
           embedded
         />
       </Card>
