@@ -15,19 +15,24 @@ import { cn } from '@/library/utils'
 const MAX_FILES = 5
 const MAX_FILE_SIZE = 150 * 1024 * 1024
 const AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/mp4', 'audio/webm', 'audio/ogg']
-const SAMPLE_AUDIO_URL =
-  'data:audio/wav;base64,UklGRlQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YTAAAAAAAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA'
+const SAMPLE_AUDIO_URL = '/data/template.wav'
 
 const filesSchema = z
   .array(
-    z.custom<File>((value) => value instanceof File, 'Некорректный файл').refine(
-      (file) => AUDIO_TYPES.includes(file.type) || /\.(mp3|wav|m4a|ogg|webm)$/i.test(file.name),
-      'Поддерживаются только аудиофайлы'
-    ).refine((file) => file.size <= MAX_FILE_SIZE, 'Один из файлов превышает 150 МБ')
+    z
+      .custom<File>((value) => value instanceof File, 'Некорректный файл')
+      .refine(
+        (file) => AUDIO_TYPES.includes(file.type) || /\.(mp3|wav|m4a|ogg|webm)$/i.test(file.name),
+        'Поддерживаются только аудиофайлы'
+      )
+      .refine((file) => file.size <= MAX_FILE_SIZE, 'Один из файлов превышает 150 МБ')
   )
   .min(1, 'Добавьте хотя бы один файл')
   .max(MAX_FILES, `Можно загрузить не больше ${MAX_FILES} файлов за раз`)
-  .refine((files) => new Set(files.map((file) => file.name)).size === files.length, 'Имена файлов должны быть уникальными')
+  .refine(
+    (files) => new Set(files.map((file) => file.name)).size === files.length,
+    'Имена файлов должны быть уникальными'
+  )
 
 type Props = {
   open: boolean
@@ -113,7 +118,7 @@ export function UploadModal({ open, onOpenChange, onUploaded }: Props) {
               <a
                 className='text-primary underline-offset-4 hover:underline'
                 href={SAMPLE_AUDIO_URL}
-                download='template.mp3'
+                download='template.wav'
               >
                 template.mp3
               </a>
@@ -165,7 +170,7 @@ export function UploadModal({ open, onOpenChange, onUploaded }: Props) {
               </div>
             ) : (
               <div className='rounded-md border border-dashed border-border/70 px-4 py-3 text-sm text-muted-foreground'>
-                Файлы пока не выбраны. Можно добавить до {MAX_FILES} файлов общим объёмом {totalSizeLabel}.
+                Файлы пока не выбраны. Можно добавить до {MAX_FILES} файлов.
               </div>
             )}
 
@@ -199,3 +204,4 @@ export function UploadModal({ open, onOpenChange, onUploaded }: Props) {
     </Dialog.Root>
   )
 }
+
