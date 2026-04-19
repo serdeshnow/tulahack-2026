@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=80.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tulahack"
+version = "0.1.0"
+description = "CLI toolkit for unified end-to-end evaluation of the voice-redaction platform"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
+    "pydantic>=2.11.0",
+    "python-multipart>=0.0.20",
+    "pyyaml>=6.0.2",
+    "uvicorn>=0.34.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+]
+
+[tool.setuptools]
+packages = ["evals", "evals.clients", "evals.datasets", "evals.metrics", "evals.runners", "evals.services", "mock_service"]

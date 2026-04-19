@@ -1,0 +1,31 @@
+dataset_path: ../datasets/examples/e2e_dataset.jsonl
+platform:
+  base_url: http://194.150.166.123:8080
+  timeout_seconds: 30
+  x_role: privileged
+  jwt_token_file: ../dev/token.txt
+  authorization_prefix: ""
+  poll_interval_seconds: 2
+  max_poll_attempts: 60
+  profile:
+    processing_profile: standard
+    pii_entities:
+      - PERSON_NAME
+      - DATE_OF_BIRTH
+      - PLACE_OF_BIRTH
+      - RU_PASSPORT
+      - RU_PASSPORT_ISSUER
+      - RU_PASSPORT_UNIT_CODE
+      - RU_INN
+      - RU_SNILS
+      - PHONE
+      - EMAIL
+      - ADDRESS
+      - CARD_NUMBER
+      - BANK_ACCOUNT
+    audio_redaction_mode: beep
+    include_summary: false
+matching:
+  tolerance_seconds: 0.2
+output:
+  report_path: ../reports/e2e_report.json
